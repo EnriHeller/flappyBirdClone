@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import PlayScene from "./scenes/PlayScene";
+import MenuScene from "./scenes/MenuScene";
 
 const gwidth = 800;
 const gheight = 600;
@@ -11,7 +12,6 @@ const SHARED_CONFIG ={
   startPosition: initPosition
 }
 
-
 const config = {
   type: Phaser.AUTO,
   ...SHARED_CONFIG,
@@ -21,7 +21,7 @@ const config = {
       gravity: 0,
     },
   },
-  scene: [new PlayScene(SHARED_CONFIG)], 
+  scene: [new MenuScene(SHARED_CONFIG), new PlayScene(SHARED_CONFIG)], 
   debug: true,
 }
 

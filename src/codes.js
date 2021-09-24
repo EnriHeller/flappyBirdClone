@@ -41,6 +41,7 @@ const fly = function(){
     bird.body.velocity.y = flyVelocity //-200;
   }
 
+//colision de un objeto contra otro objeto
 //Puedo hacer restart del juego reiniciando la posicion
 const restartBirdPosition = function(){
     bird.x = initPosition.x;
@@ -49,7 +50,7 @@ const restartBirdPosition = function(){
   }
 
 //Si quiero que un objeto no se caiga, lo puedo definir sin el physics:
-pipe = this.add.sprite(300, 100, "pipe").setOrigin(0);
+pipe = this.add.sprite(300, 100, "pipe").setOrigin(0);/* Solo un pipe */
 
 //Para localizar dos objetos uno arriba del otro, los pongo en una misma posicion pero con una distancia predeterminada entre ambos. El set origin elijo de que punto tomarlo
 pipe = this.add.sprite(400, 200, "pipe").setOrigin(1,0);
@@ -85,6 +86,7 @@ for (let i = 0; i < pipesToRender; i++) {
 
 /////////PLACE PIPE REFACTOR///////////
 
+//Armar en funciones separadas, cualidades o comportamientos de los objetos
 //Es posible crear una función que se encargue exclusivamente de variar la posición de los objetos y la velocidad de los objetos, cosa que en el create solo quede la definición, y que con una función se aplique todo. Se definen los sprites dentro del create y después con un ciclo for se le aplican todas las propiedades
 
 const upperPipe = this.physics.add.sprite(0, 0, "pipe").setOrigin(0,1);
@@ -139,7 +141,7 @@ function placePipe(upPipe,LoPipe){
   LoPipe.y = upPipe.y + pipeVerticalDistance
 }
 
-//RECICLAR PIPES: se ejecuta en update
+//RECICLAR OBJETOS: se ejecuta en update
 
 function recyclePipes(){
   let pipesOut = [];
@@ -210,7 +212,7 @@ La primer refactorizacion consistio en poder transladar toda la escena completa 
 //Todo lo que se vaya a poner en el create o update esta buenos separarlo en funciones
 
 
-/* COLIDERS */
+/* COLIDERS (ejecutar funciones en la colisión) */ 
 function createColliders() {
   this.physics.add.collider(this.bird, this.pipes, this.gameOver, null, this);// Los primeros dos parámetros indican los objetos que van a colisionar, el tercero una función que se ejecuta cuando colisionen, el 4to es el process callback y el último es el contexto en el que se va a ejecutar. 
 }
@@ -269,3 +271,112 @@ function gameOver(){
   })
 }
 
+
+/* INCREASE SCORE:
+  Para incrementar los puntos y mostrarlos, primero hay que crear una variable que aloje los puntos, y otra que aloje un texto (constructor). Luego en create, a estas variables se les asigna el numero y el texto a mostrar con dicho numero, respectivamente.
+
+  Como quiero que los puntos se sumen cuando el pajaro ya logró pasar por los pipes, Una vez que el acumulador de recyclePipes conto 2, se puede ejecutar una función increasescore, que va a agarrar el score, le suma uno, y redefine el texto:
+
+*/
+//constructor
+this.score;
+this.scoreText;
+
+//create
+this.createScore();
+
+//functions
+function createScore() {
+  this.score = 0;
+  this.scoreText = this.add.text(16, 16, `Score: ${0}`, { fontSize: "32px", fill: "#000" });
+}
+
+function increaseScore(){
+  this.score++;
+  this.scoreText.setText(`Score: ${this.score}`)
+}
+
+function recyclePipes(){
+  let pipesOut = [];
+  this.pipes.getChildren().forEach((pipe)=>{
+      if(pipe.getBounds().right <= 0){
+          pipesOut.push(pipe);
+          if(pipesOut.length ===2){
+              this.placePipe(...pipesOut)
+              this.increaseScore()   
+          }
+      }  
+  })
+}
+
+
+/* //KEEP BEST SCORE :
+  En la función que verifica que se cumpla la condición para que un score sea guardado (recyclePipes), una vez que se incrementa el score, se llama a una función saveBestScores. Esta trae del  local storage (como un string) el bestScore guardado. Si existe y el score actual es mayor al que esta guardado, se guarda el actual.
+
+  Se ejecuta cuando se reciclan pipes y cuando se pierde
+*/
+
+function recyclePipes(){
+  let pipesOut = [];
+  this.pipes.getChildren().forEach((pipe)=>{
+      
+      if(pipe.getBounds().right <= 0){
+          pipesOut.push(pipe);
+          if(pipesOut.length ===2){
+              this.placePipe(...pipesOut)
+              this.increaseScore()   
+              this.saveBestScore()
+          }
+      }
+  })
+}
+
+function saveBestScore(){
+  const bestScoreText = localStorage.getItem("bestScore");
+  const bestScore = bestScoreText && parseInt(bestScoreText,10)
+
+  if(!bestScore || this.score>bestScore){
+      localStorage.setItem("bestScore", this.score)
+  }
+}
+
+function gameOver(){
+  this.physics.pause();
+  this.bird.setTint(0xEE1515);
+
+  this.saveBestScore();
+
+  this.time.addEvent({
+      delay: 1000,
+      callback: ()=>{
+          this.scene.restart()
+      },
+      loop: false
+  })
+}
+
+
+//PAUSE
+
+function createPause(){
+  this.add.image(this.config.width - 10, this.config.height-10, "pause").setOrigin(1,1).setScale(3)
+}
+
+//Siempre que se vaya a crear un botón con una imagen esta bueno igualar el this.add.image a una constante, y automaticamente el phaser lo va a reconocer como un objeto. De esta forma, al ser un objeto de phaser, es posible añadirle una función con el metodo on().
+//Si se usa this.physics.pause(), se frena lo que incluya el update
+
+function createPause(){
+  const pauseButton = this.add.image(this.config.width - 10, this.config.height-10, "pause")
+      .setOrigin(1,1)
+      .setScale(3)
+      .setInteractive();
+
+  pauseButton.on("pointerdown", this.pauseGame)
+
+  this.input.keyboard.on('keydown-P', this.pauseGame, this);
+}
+
+function pauseGame(){
+  this.physics.pause();
+  this.scene.pause();
+}
