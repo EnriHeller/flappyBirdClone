@@ -8,6 +8,8 @@ const config = {
 }
 //Sino, es así:
 //scene: [PlayScene]
+/* Una escena tambien se puede añadir con game.scene.add("BootScene", BootScene). Esto sirve si tengo las escenas importadas */
+
 
 
 //esto puede ir dentro del update y sirve para hacer un conteo de los iframes cada un segundo.
@@ -200,4 +202,6 @@ class PlayScene extends Phaser.Scene{
 //En el archivo de la escena que cree, voy a tener que definir todos los sprites dentro de el archivo constructor, para que se encuentren durante toda la escena. Cuando se vayan a mensionar en el created, también hay que hacerlo con this. EL this sirve para referenciar al archivo constructor, que declara el contexto (creo). Todas las funciones y objetos que pertenezcan a la escena tienen que tener this. 
 this.bird;
 this.pipes;
+
+/*REEEEEEEEEEEEEEEEEEEE IMPORTANTE: TODAS LAS FUNCIONES CREADAS DENTRO DEL CONSTRUCTOR NO LLEVAN FUNCTION. SE DEFINEN COMO NOMBRE(){} */
 
