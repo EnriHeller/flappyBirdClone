@@ -6,10 +6,9 @@ const config = {
     update
   }
 }
-//Sino, es así:
+//Si no, es así:
 //scene: [PlayScene]
 /* Una escena tambien se puede añadir con game.scene.add("BootScene", BootScene). Esto sirve si tengo las escenas importadas */
-
 
 
 //esto puede ir dentro del update y sirve para hacer un conteo de los iframes cada un segundo.
@@ -204,4 +203,69 @@ this.bird;
 this.pipes;
 
 /*REEEEEEEEEEEEEEEEEEEE IMPORTANTE: TODAS LAS FUNCIONES CREADAS DENTRO DEL CONSTRUCTOR NO LLEVAN FUNCTION. SE DEFINEN COMO NOMBRE(){} */
+
+/* ///////////Primer refactorizacion:
+La primer refactorizacion consistio en poder transladar toda la escena completa a un nuevo archivo. En este archivo, las variables se van a definir dentro de la funcion constructor en una clase que extiende la superclass. Dentro de la misma clase estaran todas las funciones, las cuales llamaran a las variables que esten definidas en el constructor mediante el prefijo this. (tambien utilizado en el constructor). En especial, hay variables dentro de la configuracion que se exportaran de la configuracion principal
+*/
+//Todo lo que se vaya a poner en el create o update esta buenos separarlo en funciones
+
+
+/* COLIDERS */
+function createColliders() {
+  this.physics.add.collider(this.bird, this.pipes, this.gameOver, null, this);// Los primeros dos parámetros indican los objetos que van a colisionar, el tercero una función que se ejecuta cuando colisionen, el 4to es el process callback y el último es el contexto en el que se va a ejecutar. 
+}
+
+/* WORLD BOUNDS COLIDERS
+  Para que un objeto pueda colisionar contra el mundo, en la función que crea a este hay que añadirle un setCollideWorldBounds verdadero. En este caso, como quiero que cuando colisione el jugador pierda, el gameStatus a verificar será cuando el pajaro (con origen 0) sea igual a 0 o cuando el borde inferior del pajaro sea igual al ancho de la pantalla
+*/
+
+function createBird(){
+  this.bird = this.physics.add.sprite(this.config.startPosition.x, this.config.startPosition.y, "bird").setOrigin(0,0);
+  this.bird.body.gravity.y = 800; 
+  this.bird.setCollideWorldBounds(true)
+}
+
+function checkGameStatus(){
+  if(this.bird.getBounds().bottom >= this.config.height || this.bird.y <= 0){
+      this.gameOver();
+  }
+}
+
+//PAUSE PHYSICS
+
+//Para detener un objeto y que no sea afectado por la colision, en la definición del mismo objeto hay que ponerle un setImmotable verdadero (antes del setOrigin)
+for (let i = 0; i < this.pipesToRender; i++) {
+  const upperPipe = this.pipes.create(0, 0, "pipe")
+  .setImmovable(true)
+  .setOrigin(0,1)
+  const downPipe = this.pipes.create(0, 0, "pipe")
+  .setImmovable(true)
+  .setOrigin(0,0);
+  this.placePipe(upperPipe, downPipe);
+}
+
+//Para pausar el juego totalmente, se pueden pausar las fisicas accediendo a ellas, también se puede añadir una referencia de perder poniendole al bird un setTint(0xCOLORbinario)
+
+function gameOver(){
+  this.physics.pause();
+  this.bird.setTint(0xEE1515);
+}
+
+/* RESTART THE GAME:
+
+  Para reiniciar la escena, es posible ejecutar this.scene.restart() y lo que hará el phaser es re-ejecutar el create. Si quiero que se reinicie cuando hace game over, simplemente pudo meterlo adentro de this.time.addevent({delay:ms, restart(), loop:false (esto por defecto es verdadero, por lo que si no se pone se va a estar reiniciando todo el tiempo cada segundo)})
+*/
+
+function gameOver(){
+  this.physics.pause();
+  this.bird.setTint(0xEE1515);
+
+  this.time.addEvent({
+      delay: 1000,
+      callback: ()=>{
+          this.scene.restart()
+      },
+      loop: false
+  })
+}
 
