@@ -1,37 +1,41 @@
 import Phaser from "phaser";
+import BaseScene from "./BaseScene";
 
-class MenuScene extends Phaser.Scene{
+class MenuScene extends BaseScene 
+{
     constructor(config){
-        super("MenuScene");
-        this.config = config;
-
+        super("MenuScene", config);
     }
 
-    preload(){
-        this.load.image("sky", "assets/sky.png");
-    }
 
     create(){
-        this.createBG();
-        this.createStartButton();
+        super.create()
         
+        this.menu = [
+            {scene: "PlayScene", text: "Play"},
+            {scene: "ScoreScene", text: "Score"},
+            {scene: null, text: "Exit"},
+        ]
+
+        this.createMenu(this.menu, this.setupMenuEvents.bind(this));
+    }
+
+    setupMenuEvents(menuItem){
+        const textGO = menuItem.textGO;
+        textGO.setInteractive();
+
+        textGO.on("pointerover", ()=>{
+            textGO.setStyle({fill: "#ff0"})
+        })
+        textGO.on("pointerout", ()=>{
+            textGO.setStyle({fill: "#fff"})
+        })
+
     }
 
     update(){
 
     }
-
-    createBG(){
-        this.add.image(0, 0, "sky" ).setOrigin(0);
-    }
-
-    createStartButton(){
-        const startButton = this.add.text(this.config.width/2, this.config.height/2, `Start Game`, { fontSize: "32px", fill: "#000" });
-        startButton.on("pointerdown",()=>{
-            this.scene.start("PlayScene");
-        })
-    }
-
 
 }
 

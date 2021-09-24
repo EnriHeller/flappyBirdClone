@@ -380,3 +380,94 @@ function pauseGame(){
   this.physics.pause();
   this.scene.pause();
 }
+
+//NUEVA ESCENA
+/* La escena que se cargue primero va a ser la que arranca el juego */
+
+/* Carga de escenas optimizada */
+const Scenes = [PreloadScene,MenuScene,PlayScene];
+const createScene = Scene => new Scene(SHARED_CONFIG)
+const initScenes = ()=> Scenes.map(createScene)
+
+const config = {
+  type: Phaser.AUTO,
+  ...SHARED_CONFIG,
+  physics:{
+    default: "arcade",
+    arcade:{
+      gravity: 0,
+    },
+  },
+  scene: initScenes(),
+  debug: true,
+}
+
+/* BASESCENE:
+  Todo lo que yo ponga en el create de esta escena, puede ser transladado a las demás escenas. Sirve para optimizar el código. La idea es que esta super escena sea una extensión del phaser.scene, y todas las demás escenas se extiendan de esta
+*/
+
+class BaseScene extends Phaser.Scene{
+    constructor(key, config){
+        super(key);
+        this.config = config;
+    }
+
+    create(){
+        this.add.image(0,0, "sky").setOrigin(0)
+    }
+}
+
+class PlayScene extends BaseScene{
+  constructor(config){
+      super("PlayScene", config);
+      this.bird;
+      this.pipes;
+      this.pause;
+      
+      this.pipesToRender = 15;
+      this.pipeVerticalDistanceRange = [150,250];
+      this.pipeHorizontalDistanceRange = [400, 500];
+      this.pipeHorizontalDistance = 0;
+      this.flyVelocity = 400;  
+      this.score;
+      this.scoreText;
+  }
+
+  create(){
+    super.create()
+  }
+}
+
+export default BaseScene;
+
+/* CREACION Y POSICIONAMIENTO DE UN MENU
+  Por lo general, un menu va a estar centrado y tendrá caracteristicas similares en todas las escenas, como el tamaño de la fuente, la separación entre opciones y el color. Es de utilidad definir entonces, todas estas variables en el BaseScene.js, al igual que la creación del mismo.
+
+  Para la creación, se debera hacer una función la cual tome la posición inicial (que cambiará a medida que se itere) de cada menuItem dentro de un array de items. Esta posición tomará los valores predefinidos de screenCenter y le sumará el lastMenuPositionY según en que numero de menuItem se esté tirando. Luego se va añadir en esa posición, el texto del item y se le aplicará el fondOptions, centrado en (0.5,1). Terminando, se sumará el lineHeight a la posición
+*/
+//baseScene
+function createMenu(menu) {
+  let lastMenuPositionY = 0;
+
+  menu.forEach(menuItem => {
+    const menuPosition = [this.screenCenter[0], this.screenCenter[1] + lastMenuPositionY];
+    this.add.text(...menuPosition, menuItem.text, this.fontOptions).setOrigin(0.5, 1);
+    lastMenuPositionY += this.lineHeight;
+  })
+}
+
+//menuScene
+this.menu = [
+  {scene: 'PlayScene', text: 'Play'},
+  {scene: 'ScoreScene', text: 'Score'},
+  {scene: null, text: 'Exit'},
+]
+
+function create() {
+super.create();
+
+this.createMenu(this.menu);
+}
+
+
+

@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import PlayScene from "./scenes/PlayScene";
 import MenuScene from "./scenes/MenuScene";
+import PreloadScene from "./scenes/PreloadScene";
 
 const gwidth = 800;
 const gheight = 600;
@@ -12,6 +13,10 @@ const SHARED_CONFIG ={
   startPosition: initPosition
 }
 
+const Scenes = [PreloadScene,MenuScene,PlayScene];
+const createScene = Scene => new Scene(SHARED_CONFIG)
+const initScenes = ()=> Scenes.map(createScene)
+
 const config = {
   type: Phaser.AUTO,
   ...SHARED_CONFIG,
@@ -21,7 +26,7 @@ const config = {
       gravity: 0,
     },
   },
-  scene: [new MenuScene(SHARED_CONFIG), new PlayScene(SHARED_CONFIG)], 
+  scene: initScenes(),
   debug: true,
 }
 

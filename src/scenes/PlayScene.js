@@ -1,10 +1,8 @@
-import Phaser from "phaser";
+import BaseScene from "./BaseScene";
 
-class PlayScene extends Phaser.Scene{
+class PlayScene extends BaseScene{
     constructor(config){
-        super("PlayScene");
-        this.config = config;
-
+        super("PlayScene", config);
         this.bird;
         this.pipes;
         this.pause;
@@ -14,7 +12,6 @@ class PlayScene extends Phaser.Scene{
         this.pipeHorizontalDistanceRange = [400, 500];
         this.pipeHorizontalDistance = 0;
         this.flyVelocity = 400;  
-
         this.score;
         this.scoreText;
     }
@@ -27,7 +24,7 @@ class PlayScene extends Phaser.Scene{
     }
 
     create(){
-        this.createBG();
+        super.create()
         this.createBird();
         this.createPipes();
         this.createPause();
