@@ -5,15 +5,33 @@ class PlayScene extends BaseScene{
         super("PlayScene", config);
         this.bird;
         this.pipes;
-        this.pause;
+        this.isPaused = false;
         
         this.pipesToRender = 15;
+
         this.pipeVerticalDistanceRange = [150,250];
         this.pipeHorizontalDistanceRange = [400, 500];
         this.pipeHorizontalDistance = 0;
         this.flyVelocity = 400;  
+
         this.score;
-        this.scoreText;
+        this.scoreText
+
+        this.currentDifficulty = "easy";
+        this.difficulties = {
+            "easy":{
+                pipeHorizontalDistanceRange: [280, 450],
+                pipeVerticalDistanceRange: [150, 200]
+            },
+            "normal":{
+                pipeHorizontalDistanceRange: [280, 330],
+                pipeVerticalDistanceRange: [140, 190]
+            },
+            "hard":{
+                pipeHorizontalDistanceRange: [200, 250],
+                pipeVerticalDistanceRange: [120, 170]
+            },
+        }
     }
 
     preload(){
@@ -24,13 +42,24 @@ class PlayScene extends BaseScene{
     }
 
     create(){
-        super.create()
+        this.currentDifficulty = "easy";
+        super.create();
         this.createBird();
         this.createPipes();
         this.createPause();
         this.createColliders();
         this.createScore();
         this.handleEvents(); 
+        this.listenToEvents()
+
+        this.anims.create({
+            key:"fly",
+            frames: this.anims.generateFrameNumbers("bird", {start: 8, end: 15}),
+            frameRate: 8,
+            repeat: -1
+        })
+
+        this.bird.play("fly");
     }
 
     update(){
@@ -38,27 +67,60 @@ class PlayScene extends BaseScene{
         this.recyclePipes();
     }
 
+    listenToEvents(){
+        if(this.pauseEvent) {return;}
+
+        this.pauseEvent = this.events.on('resume', () => {
+            this.initialTime = 3;
+            this.countDownText = this.add.text(...this.screenCenter, 'Fly in: ' + this.initialTime, this.fontOptions).setOrigin(0.5);
+            this.timedEvent = this.time.addEvent({
+                delay: 1000,
+                callback: this.countDown,
+                callbackScope: this,
+                loop: true
+            })
+        })
+    } 
+
+    countDown() {
+        this.initialTime--;
+        this.countDownText.setText('Fly in: ' + this.initialTime);
+        if (this.initialTime <= 0) {
+            this.isPaused = false;
+            this.countDownText.setVisible(false);
+            this.physics.resume();
+            this.timedEvent.remove();
+        }
+    }
+
     createBG(){
         this.add.image(0, 0, "sky" ).setOrigin(0);
     }
     createPause(){
+        this.isPaused = false;
         const pauseButton = this.add.image(this.config.width - 10, this.config.height-10, "pause")
             .setOrigin(1,1)
             .setScale(3)
             .setInteractive();
 
-        pauseButton.on("pointerdown", this.pauseGame)
+        pauseButton.on('pointerdown', this.pauseGame, this);
 
         this.input.keyboard.on('keydown-P', this.pauseGame, this);
     }
 
     pauseGame(){
+        this.isPaused = true;
         this.physics.pause();
         this.scene.pause();
+        this.scene.launch('PauseScene');
     }
 
     createBird(){
-        this.bird = this.physics.add.sprite(this.config.startPosition.x, this.config.startPosition.y, "bird").setOrigin(0,0);
+        this.bird = this.physics.add.sprite(this.config.startPosition.x, this.config.startPosition.y, "bird")
+        .setScale(3)
+        .setOrigin(0,0)
+        .setFlipX(true);
+        this.bird.setBodySize(this.bird.width, this.bird.height - 8);
         this.bird.body.gravity.y = 800; 
         this.bird.setCollideWorldBounds(true)
     }
@@ -85,7 +147,7 @@ class PlayScene extends BaseScene{
         this.score = 0;
         const bestScore = localStorage.getItem("bestScore")
         this.scoreText = this.add.text(16, 16, `Score: ${0}`, { fontSize: "32px", fill: "#000" });
-        this.add.text(16, 46  , `Best score: ${bestScore || 0}`, { fontSize: "18px", fill: "#000" });
+        this.add.text(16, 46  , `Best score: ${bestScore || 0}`, { fontSize: "18px", fill: "#000"});
     }
 
     handleEvents(){
@@ -94,10 +156,11 @@ class PlayScene extends BaseScene{
     }
     
     placePipe(upPipe,LoPipe){
+        const difficulty = this.difficulties[this.currentDifficulty];
         const rightMostX = this.getRightMostPipe() 
-        const pipeVerticalDistance = Phaser.Math.Between(...this.pipeVerticalDistanceRange);
+        const pipeVerticalDistance = Phaser.Math.Between(...difficulty.pipeVerticalDistanceRange);
         const pipeVerticalPosition = Phaser.Math.Between(20, this.config.height - 20 -pipeVerticalDistance);
-        const pipeHorizontalDistance = Phaser.Math.Between(...this.pipeHorizontalDistanceRange);
+        const pipeHorizontalDistance = Phaser.Math.Between(...difficulty.pipeHorizontalDistanceRange);
     
         upPipe.x = rightMostX + pipeHorizontalDistance;
         upPipe.y = pipeVerticalPosition;
@@ -116,9 +179,20 @@ class PlayScene extends BaseScene{
                     this.placePipe(...pipesOut)
                     this.increaseScore()   
                     this.saveBestScore()
+                    this.increaseDifficulty()
                 }
             }
         })
+    }
+
+    increaseDifficulty(){
+        if(this.score === 2){
+            this.currentDifficulty = "normal";
+        }
+
+        if(this.score === 3){
+            this.currentDifficulty = "hard";
+        }
     }
 
     getRightMostPipe(){
@@ -154,6 +228,7 @@ class PlayScene extends BaseScene{
     }
     
     birdFly(){
+        if(this.isPaused){return;}
         this.bird.body.velocity.y = -this.flyVelocity;
     }    
 

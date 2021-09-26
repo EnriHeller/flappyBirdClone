@@ -402,7 +402,7 @@ const config = {
   debug: true,
 }
 
-/* BASESCENE:
+/* definicion de BASESCENE:
   Todo lo que yo ponga en el create de esta escena, puede ser transladado a las demás escenas. Sirve para optimizar el código. La idea es que esta super escena sea una extensión del phaser.scene, y todas las demás escenas se extiendan de esta
 */
 
@@ -443,7 +443,7 @@ export default BaseScene;
 /* CREACION Y POSICIONAMIENTO DE UN MENU
   Por lo general, un menu va a estar centrado y tendrá caracteristicas similares en todas las escenas, como el tamaño de la fuente, la separación entre opciones y el color. Es de utilidad definir entonces, todas estas variables en el BaseScene.js, al igual que la creación del mismo.
 
-  Para la creación, se debera hacer una función la cual tome la posición inicial (que cambiará a medida que se itere) de cada menuItem dentro de un array de items. Esta posición tomará los valores predefinidos de screenCenter y le sumará el lastMenuPositionY según en que numero de menuItem se esté tirando. Luego se va añadir en esa posición, el texto del item y se le aplicará el fondOptions, centrado en (0.5,1). Terminando, se sumará el lineHeight a la posición
+  Para la creación, se debera hacer una función la cual tome la posición inicial (que cambiará a medida que se itere) de cada menuItem dentro de un array de items. Esta posición tomará los valores predefinidos de screenCenter y le sumará el lastMenuPositionY según que numero de menuItem se esté tirando. Luego se va añadir en esa posición, el texto del item y se le aplicará el fondOptions, centrado en (0.5,1). Terminando, se sumará el lineHeight a la posición
 */
 //baseScene
 function createMenu(menu) {
@@ -469,5 +469,310 @@ super.create();
 this.createMenu(this.menu);
 }
 
+//SETUP MENU EVENTS: POINTER ON / OUT / UP 
+
+//Para poder añadirle eventos como el cambio de color a los menu items, en la función createMenu definida en la basescene, le voy a pasar como parámetro la función que me haga este setup, ya definida dentro del MenuScene. cuando el createMenu se importe al menuScene con  this.createMenu(this.menu, this.setupMenuEvents.bind(this)) , se carga el objeto menu y la función, que define al texto como gameobject y le añade eventos de pointerover (por encima) y pointerout(saliendo). El menuItem.textGO es una propiedad que se le agrega al menuItem en la baseScene. el bind se utiliza porque el textGO no está definido en el contexto del MenuScene. Para traer el this a este contexto, hay que ponerlo para poder navegar en este contexto. 
+
+//Para la navegación entre escenas se verifica si el menuItem tiene una escena, y si la tiene, la empieza. Si el menuItem text dice "exit", se destruye el canvas
+
+//BASESCENE
+
+this.screenCenter = [config.width / 2, config.height / 2];
+this.fontSize = 34;
+this.lineHeight = 42;
+this.fontOptions = {fontSize: `${this.fontSize}px`, fill: '#fff'};
 
 
+function create() {
+this.add.image(0, 0, 'sky').setOrigin(0);
+}
+
+function createMenu(menu, setupMenuEvents) {
+let lastMenuPositionY = 0;
+
+menu.forEach(menuItem => {
+  const menuPosition = [this.screenCenter[0], this.screenCenter[1] + lastMenuPositionY];
+  menuItem.textGO = this.add.text(...menuPosition, menuItem.text, this.fontOptions).setOrigin(0.5, 1);
+  lastMenuPositionY += this.lineHeight;
+  setupMenuEvents(menuItem);
+})
+}
+
+//MENUSCENE
+
+function create() {
+  super.create();
+
+  this.createMenu(this.menu, this.setupMenuEvents.bind(this));
+}
+
+function setupMenuEvents(menuItem) {
+  const textGO = menuItem.textGO;
+  textGO.setInteractive();
+
+  textGO.on('pointerover', () => {
+    textGO.setStyle({fill: '#ff0'});
+  })
+
+  textGO.on('pointerout', () => {
+    textGO.setStyle({fill: '#fff'});
+  })
+
+  textGO.on("pointerup", ()=>{
+    menuItem.scene && this.scene.start(menuItem.scene);
+    
+    if(menuItem.text === "Exit"){
+        this.game.destroy(true);
+    }
+})
+}
+
+
+//SHOW BEST SCORE
+function create(){
+  super.create()
+  const bestScore = localStorage.getItem("bestScore")
+  this.add.text(...this.screenCenter, `Best score: ${bestScore || 0}`, this.fontOptions).setOrigin(0.5);
+}
+
+//BACK BUTTON: BOTON QUE PUEDE ESTAR, COMO NO
+
+//Para cargar el back button, lo primero que hacemos es cargar su imagen al preload. Una vez echo esto, Como solo habrá ciertas las escenas en las que quiero que este, en la carga del config desde el baseScene, se pondrá como un objeto y se agregará la propiedad canGoBack:true, la cual al ser un booleano, cuando quiera establecer que se cree o no desde el basescene,  me va a permitir a hacer la validación para la escena correspondiente.
+
+//preload scene
+this.load.image('back', 'assets/back.png');
+
+//score scene
+function constructor(config) {
+  super('ScoreScene', {...config, canGoBack: true});
+}
+
+//basescene
+
+function create() {
+  this.add.image(0, 0, 'sky').setOrigin(0);
+
+  if (this.config.canGoBack) {
+    const backButton = this.add.image(this.config.width - 10, this.config.height -10, 'back')
+      .setOrigin(1)
+      .setScale(2)
+      .setInteractive()
+
+    backButton.on('pointerup', () => {
+      this.scene.start('MenuScene');
+    })
+  }
+}
+
+//PAUSE SCENE
+//Se puede crear una escena de pausa, con un menu que permita volver al menu principal o continuar el juego, sin necesidad de perder lo que ya se avanzo del mismo. Para ello, cuando se clickee en el boton de pausa, para acceder a esta escena hay que usar launch en vez de start.
+
+pauseButton.on('pointerdown', () => {
+  this.physics.pause();
+  this.scene.pause();
+  this.scene.launch('PauseScene');
+})
+
+//RESUME SCENE
+//Si se cambio a una escena mediante launch, la anterior queda pausada. Para volver a la misma, hay que parar la que estoy y retorno a la anterior con this.scene.resume(). Por otro lado, si quiero volver a una que no quedo pausada, uso como siempre start, pero antes hay que parar la que estoy
+
+
+//pause scene
+
+if (menuItem.scene && menuItem.text === 'Continue') {
+  // Shutting down the Pause Scene and resuming the Play Scene
+  this.scene.stop();
+  this.scene.resume(menuItem.scene);
+} else {
+  // Shutting PlayScene, PauseScene and running Menu
+  this.scene.stop('PlayScene');
+  this.scene.start(menuItem.scene);
+}
+
+//RESUME EVENT: //COUNTDOWN
+
+//Cuando se vuelve a una escena, es necesario captar el evento de resume que se despliega en esta (desde el PauseScene), para poder ejecutar una función que yo quiera ante este evento. En este caso tengo que crear un countdown hasta 1. La función para poder hacer esto dependerá de this.time.addEvent.
+
+//La función countdown lo que hara es ir achicando el initialTime y transformando el countDownText. Cuando el initialTime llegue a 0, el countdownText desaparece, las physics se resume y el timeEvent muere, para que no siga ejecuntadose en loop.
+
+//IMPORTANTISIMO: Antes del llamado a la escucha de eventos, hay que hacer un pequeño condicional, que si el evento existe borrarlo, ya que sino se acumulan y se bugea todo
+
+function listenToEvents() {
+  if (this.pauseEvent) { return; }
+
+  this.pauseEvent = this.events.on('resume', () => {
+    this.initialTime = 3;
+    this.countDownText = this.add.text(...this.screenCenter, 'Fly in: ' + this.initialTime, this.fontOptions).setOrigin(0.5);
+    this.timedEvent = this.time.addEvent({
+      delay: 1000,
+      callback: this.countDown,
+      callbackScope: this,
+      loop: true
+    })
+  })
+}
+
+function countDown() {
+  this.initialTime--;
+  this.countDownText.setText('Fly in: ' + this.initialTime);
+  if (this.initialTime <= 0) {
+    this.countDownText.setVisible(false);
+    this.physics.resume();
+    this.timedEvent.remove();
+  }
+}
+
+//FIXING FLAP: Solucionar interferencias entre evento global y particular
+
+//Cuando se clickea el botón de pausa, también se está recibiendo el evento global para que el pajaro vuele. Por ende, es necesario tener una variable booleana (false por defecto) que cambie a true cuando se ejecuta la función de pausar, y a false cuando se haga resume. Teniendo esta funcionalidad, antes que se lea la variable particular se verifica el booleano para que no se ejecute la global. 
+
+//constructor
+this.isPaused = false;
+
+//before resume event
+this.isPaused = false;
+
+//create pause button
+this.isPaused = false;
+
+//click on pause button
+this.isPaused = true;
+
+//ADDING DIFFICULTIES
+
+//Para añadir dificultad al juego, hay que tener en cuenta que parámetros son aquellos que podrían incrementarla. Una vez que se los tiene, es posible crear un objeto dificultades, donde cada propiedad sea una dificultad distinta, variando estos parámetros que hacen más dificil al juego. Cuando se vaya a hacer un llamado de aquellos parámetros (antes fijos) dentro de las funciones, en vez de poner this.parametro, pongo desde el objeto dificultad
+
+//constructor
+this.currentDifficulty = 'easy';
+this.difficulties = {
+  'easy': {
+    pipeHorizontalDistanceRange: [300, 350],
+    pipeVerticalDistanceRange: [150, 200]
+  },
+  'normal': {
+    pipeHorizontalDistanceRange: [280, 330],
+    pipeVerticalDistanceRange: [140, 190]
+  },
+  'hard': {
+    pipeHorizontalDistanceRange: [250, 310],
+    pipeVerticalDistanceRange: [120, 150]
+  }
+}
+
+//función constructora (se llama en create y se crea por fuera)
+function placePipe(uPipe, lPipe) {
+  const difficulty = this.difficulties[this.currentDifficulty];
+  const rightMostX = this.getRightMostPipe();
+  const pipeVerticalDistance = Phaser.Math.Between(...difficulty.pipeVerticalDistanceRange);
+  const pipeVerticalPosition = Phaser.Math.Between(0 + 20, this.config.height - 20 - pipeVerticalDistance);
+  const pipeHorizontalDistance = Phaser.Math.Between(...difficulty.pipeHorizontalDistanceRange);
+}
+
+
+//INCREASE DIFFICULTY
+//Para incrementar la velocidad hay que identificar cual es la función que se encarga de cambiar el parámetro que va a depender la dificultad. En este caso, la dificultad puede depender 
+
+function recyclePipes(){
+  let pipesOut = [];
+  this.pipes.getChildren().forEach((pipe)=>{
+
+      if(pipe.getBounds().right <= 0){
+          pipesOut.push(pipe);
+          if(pipesOut.length ===2){
+              this.placePipe(...pipesOut)
+              this.increaseScore()   
+              this.saveBestScore()
+              this.increaseDifficulty()
+          }
+      }
+  })
+}
+
+function increaseDifficulty(){
+  if(this.score === 2){
+      this.currentDifficulty = "normal";
+  }
+
+  if(this.score === 3){
+      this.currentDifficulty = "hard";
+  }
+}
+
+//BIRD SPRITESHEET
+
+//Un spritesheet es una imagen que contiene distintos tipos de acciones, recortadas imagen por imagen. El armado de un spritesheet se compone por una matriz, donde una fila es una acción completa. Dependiendo cuantas acciones tenga y dependiendo el tamaño de cada frame, variará el tamaño del spritesheet.
+//El phaser se va a ocupar de dividir la imágen en la n cantidad de frames que tenga en total. Para ello, hay que cargar el spritesheet en el preload, y pasarle como parámetro cuanto mide cada frame. 
+//Una vez que se haya cargado el spritesheet, cuando se vaya a llamar en el create es posible setearlo según como quieras.
+
+//preloadscene.js
+class PreloadScene extends Phaser.Scene{
+  constructor(){
+      super("PreloadScene");
+  }
+
+  preload(){
+      this.load.image("sky", "assets/sky.png");
+      this.load.spritesheet("bird", "/assets/birdSprite.png", {
+          frameWidth: 16, frameHeight: 16
+      })
+      this.load.image("pipe", "/assets/pipe.png");
+      this.load.image("pause", "/assets/pause.png");
+      this.load.image("back", "/assets/back.png")
+  }
+
+  create(){
+      this.scene.start("MenuScene");    
+  }
+
+  update(){
+
+  }}
+
+//Playscene.js - create()
+
+function createBird(){
+  this.bird = this.physics.add.sprite(this.config.startPosition.x, this.config.startPosition.y, "bird")
+  .setScale(3)
+  .setOrigin(0,0)
+  .setFlipX(true)
+  this.bird.body.gravity.y = 800; 
+  this.bird.setCollideWorldBounds(true)
+}
+
+//ANIMATION
+
+//Las animaciones consisten en un objeto que se crea a partir de this.anims.create({}), lleva una key, una especificación de que numero a que numero de frame , un framerate (cantidad de frames por segundo) y un repeat igual a -1, si quiero que se repita infinitamente.
+
+//Para que la animación se ejecute, se usa this.spritename.play("key")
+
+//Si la animación conlleva ruido (manchas), se puede usar pixelArt = true, en el constructor del index.js
+
+//Playscene.js (create)
+this.anims.create({
+  key: 'fly',
+  frames: this.anims.generateFrameNumbers('bird', { start: 9, end: 15}),
+  // 24 fps default, it will play animation consisting of 24 frames in 1 second
+  // in case of framerate 2 and sprite of 8 frames animations will play in
+  // 4 sec; 8 / 2 = 4
+  frameRate: 8,
+  // repeat infinitely
+  repeat: -1
+})
+
+this.bird.play('fly');
+
+//index.js
+const config = {
+  type: Phaser.AUTO,
+  ...SHARED_CONFIG,
+  pixelArt: true,
+  physics: {
+    default: 'arcade',
+    arcade: {}
+  }
+  }
+
+  //setBodysize (recuadro en debugger)
+
+  //playscene
+  this.bird.setBodySize(this.bird.width, this.bird.height - 8);

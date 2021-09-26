@@ -10,9 +10,20 @@ class BaseScene extends Phaser.Scene{
         this.fontOptions = {fontSize: `${this.fontSize}px`, fill:"#fff" }
 
     }
-
+    
     create(){
         this.add.image(0,0, "sky").setOrigin(0)
+
+        if(this.config.canGoBack){
+            const backButton = this.add.image(this.config.width - 15, this.config.height-10, "back")
+            .setOrigin(1,1)
+            .setScale(2)
+            .setInteractive();
+            backButton.on("pointerup", ()=>{
+                this.scene.start("MenuScene");
+            })
+        }
+
     }
 
     createMenu(menu, setupMenuEvents){
