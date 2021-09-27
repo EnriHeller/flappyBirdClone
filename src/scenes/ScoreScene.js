@@ -1,4 +1,4 @@
-import BaseScene from "./BaseScene";
+import BaseScene from "./BaseScene.js";
 
 class ScoreScene extends BaseScene 
 {

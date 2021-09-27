@@ -1,4 +1,4 @@
-import BaseScene from "./BaseScene";
+import BaseScene from "./BaseScene.js";
 
 class PlayScene extends BaseScene{
     constructor(config){
@@ -32,13 +32,6 @@ class PlayScene extends BaseScene{
                 pipeVerticalDistanceRange: [120, 170]
             },
         }
-    }
-
-    preload(){
-        this.load.image("sky", "assets/sky.png");
-        this.load.image("bird", "assets/bird.png");
-        this.load.image("pipe", "/assets/pipe.png");
-        this.load.image("pause", "/assets/pause.png");
     }
 
     create(){

@@ -1,9 +1,8 @@
-import Phaser from "phaser";
-import PlayScene from "./scenes/PlayScene";
-import MenuScene from "./scenes/MenuScene";
-import PreloadScene from "./scenes/PreloadScene";
-import ScoreScene from "./scenes/ScoreScene";
-import PauseScene from "./scenes/PauseScene";
+import PlayScene from "./scenes/PlayScene.js";
+import MenuScene from "./scenes/MenuScene.js";
+import PreloadScene from "./scenes/PreloadScene.js";
+import ScoreScene from "./scenes/ScoreScene.js";
+import PauseScene from "./scenes/PauseScene.js";
 
 const gwidth = 800;
 const gheight = 600;

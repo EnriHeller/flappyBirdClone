@@ -772,7 +772,7 @@ const config = {
   }
   }
 
-  //setBodysize (recuadro en debugger)
+  //setBodysize (tamaño de recuadro en debugger)
 
-  //playscene
+  //playscene.js
   this.bird.setBodySize(this.bird.width, this.bird.height - 8);

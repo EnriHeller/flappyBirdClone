@@ -1,4 +1,3 @@
-import Phaser from "phaser";
 
 class BaseScene extends Phaser.Scene{
     constructor(key, config){
